@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>دوري كرة القدم — كامل بالجدولة وتسجيل النتائج</title>
+<link rel="stylesheet" href="./style.css">
+<style>
+</style>
+</head>
+<body>
+<div class="ball" aria-hidden="true"></div>
+
+<div class="container" id="page-main">
+  <div class="card header">
+    <h1>لجنه الانشطه والمسابثات لأبراشيه برج العرب والعامريه</h1>
+    <div class="row">
+      <button onclick="enterAudience()">أنا من الجمهور</button>
+      <button class="secondary" onclick="enterOrganizer()">أنا من المنظمين</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h3>دوري الراعي </h3>
+    <div class="muted">
+          إِنْ كَانَتْ تَسْلِيَةٌ مَا لِلْمَحَبَّةِ.
+    </div>
+  </div>
+</div>
+
+<!-- Login -->
+<div class="container hidden" id="page-login">
+  <div class="card header">
+    <h2>تسجيل دخول المنظم</h2>
+    <div class="row">
+      <input id="login-user" placeholder="user" />
+      <input id="login-pass" placeholder="pass" type="password" />
+      <button onclick="doLogin()">دخول</button>
+      <button class="ghost" onclick="goHome()">رجوع</button>
+    </div>
+    <div class="muted" style="width:20%;"> <b></b>  <b></b></div>
+  </div>
+</div>
+
+<!-- Audience -->
+<div class="container hidden" id="page-audience">
+  <div class="card header">
+    <h2>عرض جدول النتائج (للمشاهدين)</h2>
+    <div class="row">
+      <button class="ghost" onclick="goHome()">الصفحة الرئيسية</button>
+    </div>
+  </div>
+
+  <div id="audience-groups"></div>
+  <div id="audience-brackets"></div>
+</div>
+
+<!-- Organizer -->
+<div class="container hidden" id="page-org">
+  <div class="card header">
+    <h2>لوحة المنظم</h2>
+    <div class="row">
+      <button class="ghost" onclick="goHome()">خروج</button>
+      <button class="danger" onclick="resetAll()">مسح الجميع</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>1) تسجيل الفرق</h3>
+    <div class="row">
+      <input id="team-input" placeholder="اسم الفريق" />
+      <button onclick="addTeam()">إضافة الفريق</button>
+    </div>
+    <div id="teams-list" class="row" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3>2) توزيع المجموعات</h3>
+    <div class="row" style="margin-bottom:10px">
+      <label>عدد الفرق في كل مجموعة:</label>
+      <select id="teams-per-group">
+        <option value="3">3 فرق</option>
+        <option value="4" selected>4 فرق</option>
+        <option value="5">5 فرق</option>
+        <option value="6">6 فرق</option>
+      </select>
+      <button class="secondary" onclick="runGroupsDraw()">🎲 توزيع أوتوماتيكي (قرعة)</button>
+      <button onclick="startManualDistribution()">✋ توزيع يدوي</button>
+    </div>
+    <div id="manual-distribution" class="hidden" style="margin-top:15px">
+      <h4>توزيع الفرق يدوياً</h4>
+      <div id="manual-groups-container"></div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="saveManualDistribution()">حفظ التوزيع اليدوي</button>
+        <button class="ghost" onclick="cancelManualDistribution()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>3) المجموعات (الترتيب) + جدول المباريات (Schedule)</h3>
+    <div id="org-groups"></div>
+  </div>
+
+  <div class="card">
+    <h3>4) الأدوار الإقصائية</h3>
+    <div class="row" style="margin-bottom:8px">
+      <button onclick="createKnockoutFromGroups()">إنشاء الدور الثاني (من المتأهلين)</button>
+      <button class="secondary" onclick="showRoundOptions('R2','R3')">إنشاء الدور الثالث</button>
+      <button class="secondary" onclick="skipToSemiFinal()">⏭️ تخطي للنصف نهائي</button>
+      <button class="secondary" onclick="showRoundOptions('R3','SF')">إنشاء نصف النهائي</button>
+      <button class="secondary" onclick="advanceFinals()">النهائي + مباراة ثالث</button>
+    </div>
+    
+    <!-- Manual pairing interface -->
+    <div id="manual-knockout" class="hidden" style="margin-top:15px; padding:15px; border:2px solid #667eea; border-radius:8px; background:#f8f9ff">
+      <h4 id="manual-knockout-title">توزيع المباريات يدوياً</h4>
+      <div id="manual-knockout-container"></div>
+      <div class="row" style="margin-top:15px">
+        <button onclick="saveManualKnockout()">حفظ التوزيع</button>
+        <button class="ghost" onclick="cancelManualKnockout()">إلغاء</button>
+      </div>
+    </div>
+    
+    <div id="org-brackets"></div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script src="./java.js"></script>
+</body>
+</html>
