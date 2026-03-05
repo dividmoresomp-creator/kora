@@ -379,28 +379,6 @@ function createKnockoutFromGroups() {
     qualified.push(...topTwoFromGroupIndex(i));
   });
   if (qualified.length < 2) { alert('المتأهلون أقل من اللازم'); return; }
-
-  // Special case: 3 groups → 6 qualified → go straight to Semi-Final (2 matches)
-  // by seeding: 1st of group A vs 2nd of group B, 1st of group B vs 2nd of group A, etc.
-  if (getGroupCount() === 3 && qualified.length === 6) {
-    const groupKeys = Object.keys(state.groups).sort((a, b) => a - b);
-    const firsts  = groupKeys.map(gi => sortGroup(state.standings[gi] || [])[0]?.name).filter(Boolean);
-    const seconds = groupKeys.map(gi => sortGroup(state.standings[gi] || [])[1]?.name).filter(Boolean);
-
-    // Cross-group seeding: 1stA vs 2ndB, 1stB vs 2ndC, 1stC vs 2ndA
-    const sf = [
-      { a: firsts[0], b: seconds[1], sA: null, sB: null, winner: null, loser: null },
-      { a: firsts[1], b: seconds[2], sA: null, sB: null, winner: null, loser: null },
-      { a: firsts[2], b: seconds[0], sA: null, sB: null, winner: null, loser: null }
-    ];
-
-    state.knockout.R2 = sf;
-    saveAll(); renderBracketsOrg(); renderAudience();
-    alert('✅ تم إنشاء دور الـ 6 (ربع نهائي)\n\nالمتأهلون الـ 6 موزعون:\n• الأول أ  🆚  الثاني ب\n• الأول ب  🆚  الثاني ج\n• الأول ج  🆚  الثاني أ\n\nالفائزون الـ 3 سيكملون لنصف النهائي');
-    return;
-  }
-
-  // Default: shuffle all qualified
   const shuffled = qualified.sort(() => Math.random() - 0.5);
   const pairs = []; for (let i = 0; i < shuffled.length; i += 2) if (shuffled[i + 1]) pairs.push({ a: shuffled[i], b: shuffled[i + 1], sA: null, sB: null, winner: null, loser: null });
   state.knockout.R2 = pairs; saveAll(); renderBracketsOrg(); renderAudience(); alert('تم إنشاء الدور الثاني من المتأهلين');
@@ -807,35 +785,6 @@ function skipToSemiFinal() {
     return; 
   }
   
-  // Special case: 3 winners from 3-group tournament → best winner gets bye to final SF
-  if (winners.length === 3) {
-    const rankedWinners = r2.map(p => ({
-      team: p.winner,
-      scored: p.sA > p.sB ? p.sA : p.sB,
-      conceded: p.sA > p.sB ? p.sB : p.sA,
-      diff: Math.abs(p.sA - p.sB)
-    })).sort((a, b) => {
-      if (b.diff !== a.diff) return b.diff - a.diff;
-      if (b.scored !== a.scored) return b.scored - a.scored;
-      return a.conceded - b.conceded;
-    });
-
-    const directToFinal = rankedWinners[0].team;
-    const sfTeams = rankedWinners.slice(1).map(w => w.team);
-
-    state.knockout.directToSF = directToFinal;
-    state.knockout.SF = [
-      { a: sfTeams[0], b: sfTeams[1], sA: null, sB: null, winner: null, loser: null }
-    ];
-    delete state.knockout.R3;
-    saveAll();
-    updateKnockoutButtons();
-    renderBracketsOrg();
-    renderAudience();
-    alert(`✅ تم إعداد نصف النهائي:\n\n⭐ متأهل مباشر للنهائي: ${directToFinal} (أفضل فائز)\n\nنصف النهائي:\n${sfTeams[0]} 🆚 ${sfTeams[1]}`);
-    return;
-  }
-  
   // Check if we have exactly 4 winners for semi-final
   if (winners.length !== 4) {
     alert(`عدد الفائزين ${winners.length} - نصف النهائي يحتاج 4 فرق بالضبط`);
@@ -860,27 +809,6 @@ function skipToSemiFinal() {
 }
 
 function advanceFinals() {
-  // Special case: 3 groups → directToSF is actually direct finalist, SF has only 1 match
-  if (state.knockout.directToSF) {
-    const sf = state.knockout.SF;
-    if (!sf || !sf.length) { alert('لا يوجد نصف نهائي'); return; }
-    if (sf.some(p => !p.winner)) { alert('سجل نتائج نصف النهائي أولاً'); return; }
-    
-    const directFinalist = state.knockout.directToSF;
-    const sfWinner = sf[0].winner;
-    const sfLoser = sf[0].loser;
-    
-    state.knockout.F = [{ a: directFinalist, b: sfWinner, sA: null, sB: null, winner: null, loser: null }];
-    state.knockout.P3 = [{ a: sfLoser, b: '---', sA: null, sB: null, winner: null, loser: null }];
-    delete state.knockout.directToSF;
-    saveAll();
-    updateKnockoutButtons();
-    renderBracketsOrg();
-    renderAudience();
-    alert(`✅ تم إنشاء النهائي:\n\n🏆 ${directFinalist} 🆚 ${sfWinner}`);
-    return;
-  }
-
   const sf = state.knockout.SF; 
   if (!sf || !sf.length) { alert('لا يوجد نصف نهائي'); return; }
   if (sf.some(p => !p.winner)) { alert('سجل نتائج نصف النهائي أولاً'); return; }
@@ -911,7 +839,7 @@ function renderBracketsOrg() {
     host.appendChild(noticeCard);
   }
   
-  const order = [['R2', getR2Label()], ['R3', 'الدور الثالث'], ['SF', 'نصف النهائي'], ['F', 'النهائي'], ['P3', 'مركز ثالث']];
+  const order = [['R2', 'الدور الثاني'], ['R3', 'الدور الثالث'], ['SF', 'نصف النهائي'], ['F', 'النهائي'], ['P3', 'مركز ثالث']];
   order.forEach(([k, label]) => {
     const list = state.knockout[k] || [];
     const card = document.createElement('div'); card.className = 'card';
@@ -944,17 +872,6 @@ function saveBracketResult(stage, idx) {
   updateKnockoutButtons(); // ✅ Update buttons after saving result
   renderBracketsOrg(); 
   renderAudience();
-}
-
-/* Update knockout button states */
-function updateKnockoutButtons() {
-  // This function can be extended to show/hide buttons based on state
-  // For now it's a safe no-op placeholder
-}
-
-/* Get dynamic label for R2 based on group count */
-function getR2Label() {
-  return getGroupCount() === 3 ? 'ربع النهائي (دور الـ 6)' : 'الدور الثاني';
 }
 
 /* Audience render */
@@ -1052,7 +969,7 @@ function renderAudience() {
   const bHost = document.getElementById('audience-brackets');
   if (!bHost) return;
   bHost.innerHTML = '';
-  const order = [['R2', getR2Label()], ['R3', 'الدور الثالث'], ['SF', 'نصف النهائي'], ['F', 'النهائي'], ['P3', 'مركز ثالث']];
+  const order = [['R2', 'الدور الثاني'], ['R3', 'الدور الثالث'], ['SF', 'نصف النهائي'], ['F', 'النهائي'], ['P3', 'مركز ثالث']];
   order.forEach(([k, label]) => {
     const list = state.knockout[k]; if (!list || !list.length) return;
     const card = document.createElement('div'); card.className = 'card';
