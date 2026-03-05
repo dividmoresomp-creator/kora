@@ -14,7 +14,7 @@ const db = firebase.firestore();
 const tournamentDoc = db.collection('tournaments').doc('main');
 
 /* Auth and initial state */
-const AUTH = { user: 'admin', pass: '1234' };
+const AUTH = { user: 'admin', pass: 'marson20263' };
 const state = {
   teams: [],
   groups: {}, // ✅ تم التغيير من [] إلى {}
